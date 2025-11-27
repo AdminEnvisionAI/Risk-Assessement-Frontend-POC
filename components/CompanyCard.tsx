@@ -125,13 +125,13 @@ export const CompanyCard: React.FC<CompanyCardProps> = ({ data, onDelete }) => {
             <div className="flex items-center justify-between pt-6 border-t border-white/5 group-hover:border-white/10 transition-colors">
               <span className="text-[10px] text-slate-600 font-mono">ID: {data.run_id.substring(0, 8)}</span>
               <div className="flex items-center gap-2">
-                <button
+                {/* <button
                   onClick={handleDelete}
                   className="p-2 rounded-lg bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 hover:text-rose-300 transition-all duration-200 border border-rose-500/20 hover:border-rose-500/40"
                   title="Delete Assessment"
                 >
                   <Trash2 size={14} />
-                </button>
+                </button> */}
                 <span className="flex items-center gap-2 text-xs font-bold text-white group-hover:translate-x-1 transition-transform bg-white/5 px-3 py-1.5 rounded-lg hover:bg-white/10">
                   View Report <ArrowRight size={14} className="text-violet-400" />
                 </span>

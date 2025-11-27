@@ -9,7 +9,7 @@ import { RiskData, AssessmentItem } from './types';
 import { Toaster, toast } from 'react-hot-toast';
 import { SAMPLE_RISK_DATA } from './constants';
 
-const API_BASE_URL = 'http://127.0.0.1:8001';
+const API_BASE_URL = 'http://127.0.0.1:8000';
 
 const Dashboard: React.FC = () => {
   const [reports, setReports] = useState<RiskData[]>([]);
