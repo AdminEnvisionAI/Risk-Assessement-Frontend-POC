@@ -17,7 +17,7 @@ import { RiskWordCloud } from './RiskWordCloud';
 import { RiskData, AssessmentItem } from '../types';
 import { SAMPLE_RISK_DATA } from '../constants';
 
-const API_BASE_URL = 'https://5719ee5e923e.ngrok-free.app';
+const API_BASE_URL = 'http://127.0.0.1:8001';
 
 const MarkdownComponents = {
   h1: ({ children }: any) => (
@@ -426,7 +426,7 @@ export const ReportDashboard: React.FC = () => {
                           {methodology.notes}
                         </p>
                         <div className="mt-auto pt-4 border-t border-white/5">
-                           <span className="text-xs text-slate-500">Tools: {methodology.web_search_tool.toUpperCase()}</span>
+                           <span className="text-xs text-slate-500">Tools: {methodology.web_search_tool?.toUpperCase() || 'N/A'}</span>
                         </div>
                       </div>
 

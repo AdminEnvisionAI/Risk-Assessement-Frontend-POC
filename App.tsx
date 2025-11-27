@@ -9,7 +9,7 @@ import { RiskData, AssessmentItem } from './types';
 import { Toaster, toast } from 'react-hot-toast';
 import { SAMPLE_RISK_DATA } from './constants';
 
-const API_BASE_URL = 'https://5719ee5e923e.ngrok-free.app';
+const API_BASE_URL = 'http://127.0.0.1:8001';
 
 const Dashboard: React.FC = () => {
   const [reports, setReports] = useState<RiskData[]>([]);
@@ -46,13 +46,50 @@ const Dashboard: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchReports();
-    let intervalId: NodeJS.Timeout;
-    if (!isDemoMode) {
-        intervalId = setInterval(fetchReports, 5000);
-    }
+  // Initial fetch on component mount
+  fetchReports();
+}, []); // Empty dependency - runs only once on mount
+
+useEffect(() => {
+  // Check if any report is currently running
+  const isAnyReportRunning = reports.some(
+    r => r.status === 'in_progress' || r.status === 'pending'
+  );
+    
+  if (!isDemoMode && isAnyReportRunning) {
+    const intervalId = setInterval(() => {
+      fetchReports();
+    }, 15000);
+        
     return () => clearInterval(intervalId);
-  }, [isDemoMode]);
+  }
+  
+}, [reports, isDemoMode]); 
+
+  const handleDeleteReport = async (runId: string, companyName: string) => {
+    try {
+      if (isDemoMode) {
+        toast.error("Cannot delete reports in Demo Mode (Server Offline)");
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/files/${runId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {      
+        const errorText = await response.text();
+        throw new Error(`Failed to delete report: ${response.status} - ${errorText}`);
+      }
+
+      toast.success(`Deleted assessment for ${companyName}`);
+      fetchReports();
+      
+    } catch (err) {
+      console.error('Error deleting report:', err);      
+      toast.error(`Failed to delete assessment: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    }
+  };
 
   const handleGenerateReport = async (companyName: string) => {
     try {
@@ -88,9 +125,12 @@ const Dashboard: React.FC = () => {
   const currentRunningReport = reports.find(r => r.status === 'in_progress' || r.status === 'pending');
 
   const handleAddNewClick = () => {
+    // FIX: Allow user to bypass a stuck report via confirmation
     if (currentRunningReport) {
-      toast.error(`An assessment for "${currentRunningReport.company_name}" is currently in progress. Please wait until it completes.`);
-      return;
+      const confirmForce = window.confirm(
+        `A report for "${currentRunningReport.company_name}" appears to be running or stuck.\n\nDo you want to force start a new assessment anyway?`
+      );
+      if (!confirmForce) return;
     }
     setIsModalOpen(true);
   };
@@ -209,30 +249,37 @@ const Dashboard: React.FC = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
             {reports.map((report) => (
-              <CompanyCard key={report._id?.$oid || report.run_id} data={report} />
+              <CompanyCard 
+                key={report._id?.$oid || report.run_id} 
+                data={report}
+                onDelete={handleDeleteReport}
+              />
             ))}
             
-            {/* Add New Card */}
+            {/* Add New Card - FIX: Removed disabled status to allow force start */}
             <div 
               onClick={handleAddNewClick}
-              className={`group relative overflow-hidden rounded-[2rem] border border-dashed border-white/10 bg-white/[0.02] p-6 flex flex-col items-center justify-center text-center transition-all h-full min-h-[450px]
+              className={`group relative overflow-hidden rounded-[2rem] border border-dashed border-white/10 bg-white/[0.02] p-6 flex flex-col items-center justify-center text-center transition-all h-full min-h-[450px] cursor-pointer
                 ${currentRunningReport 
-                  ? 'cursor-not-allowed opacity-50 hover:border-rose-500/30' 
-                  : 'hover:bg-white/[0.04] hover:border-violet-500/30 cursor-pointer'
+                  ? 'hover:bg-rose-500/5 hover:border-rose-500/30' 
+                  : 'hover:bg-white/[0.04] hover:border-violet-500/30'
                 }
               `}
             >
                <div className={`w-24 h-24 rounded-[2rem] bg-white/5 flex items-center justify-center mb-8 text-slate-600 transition-all shadow-2xl duration-500
-                  ${currentRunningReport ? 'group-hover:text-rose-400' : 'group-hover:bg-violet-600 group-hover:text-white group-hover:shadow-violet-500/40 group-hover:scale-110 group-hover:rotate-3'}
+                  ${currentRunningReport 
+                    ? 'group-hover:text-rose-400 group-hover:scale-110' 
+                    : 'group-hover:bg-violet-600 group-hover:text-white group-hover:shadow-violet-500/40 group-hover:scale-110 group-hover:rotate-3'
+                  }
                `}>
                   {currentRunningReport ? <Loader2 size={40} className="animate-spin" /> : <Plus size={40} />}
                </div>
-               <h3 className={`text-2xl font-bold transition-colors mb-3 ${currentRunningReport ? 'text-slate-500' : 'text-slate-400 group-hover:text-white'}`}>
+               <h3 className={`text-2xl font-bold transition-colors mb-3 ${currentRunningReport ? 'text-slate-400' : 'text-slate-400 group-hover:text-white'}`}>
                  New Assessment
                </h3>
                <p className="text-sm text-slate-500 mt-2 max-w-[220px] font-light leading-relaxed">
                  {currentRunningReport 
-                   ? "Analysis currently in progress. Please wait..." 
+                   ? `Analysis for "${currentRunningReport.company_name}" pending. Click to force new run.` 
                    : "Initialize a deep-dive AI risk analysis run for a new entity."
                  }
                </p>

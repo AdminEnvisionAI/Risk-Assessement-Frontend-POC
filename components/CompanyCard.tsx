@@ -1,13 +1,14 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RiskData, AssessmentItem } from '../types';
-import { ArrowRight, Activity, Globe, ShieldAlert, Loader2 } from 'lucide-react';
+import { ArrowRight, Activity, Globe, ShieldAlert, Loader2, Trash2 } from 'lucide-react';
 
 interface CompanyCardProps {
   data: RiskData;
+  onDelete?: (runId: string, companyName: string) => void;
 }
 
-export const CompanyCard: React.FC<CompanyCardProps> = ({ data }) => {
+export const CompanyCard: React.FC<CompanyCardProps> = ({ data, onDelete }) => {
   const navigate = useNavigate();
   const profile = data.steps?.risk_schema_design?.result?.risk_schema?.company_profile;
   const assessment = data.steps?.risk_assessment?.result?.assessment;
@@ -31,6 +32,15 @@ export const CompanyCard: React.FC<CompanyCardProps> = ({ data }) => {
   let scoreColor = 'bg-emerald-500';
   if (percentage > 40) scoreColor = 'bg-amber-500';
   if (percentage > 70) scoreColor = 'bg-rose-500';
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onDelete) {
+      if (window.confirm(`Are you sure you want to delete the risk assessment for "${data.company_name}"? This action cannot be undone.`)) {
+        onDelete(data.run_id, data.company_name);
+      }
+    }
+  };
 
   return (
     <div 
@@ -114,9 +124,18 @@ export const CompanyCard: React.FC<CompanyCardProps> = ({ data }) => {
 
             <div className="flex items-center justify-between pt-6 border-t border-white/5 group-hover:border-white/10 transition-colors">
               <span className="text-[10px] text-slate-600 font-mono">ID: {data.run_id.substring(0, 8)}</span>
-              <span className="flex items-center gap-2 text-xs font-bold text-white group-hover:translate-x-1 transition-transform bg-white/5 px-3 py-1.5 rounded-lg hover:bg-white/10">
-                View Report <ArrowRight size={14} className="text-violet-400" />
-              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleDelete}
+                  className="p-2 rounded-lg bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 hover:text-rose-300 transition-all duration-200 border border-rose-500/20 hover:border-rose-500/40"
+                  title="Delete Assessment"
+                >
+                  <Trash2 size={14} />
+                </button>
+                <span className="flex items-center gap-2 text-xs font-bold text-white group-hover:translate-x-1 transition-transform bg-white/5 px-3 py-1.5 rounded-lg hover:bg-white/10">
+                  View Report <ArrowRight size={14} className="text-violet-400" />
+                </span>
+              </div>
             </div>
           </>
         )}
