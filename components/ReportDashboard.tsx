@@ -95,16 +95,23 @@ export const ReportDashboard: React.FC = () => {
   
   const reportContentRef = useRef<HTMLDivElement>(null);
 
+  const fetchLock = useRef<string | null>(null);
+
   useEffect(() => {
     const fetchReport = async () => {
+      if (fetchLock.current === id) return;
+      fetchLock.current = id;
+
       try {
-        const response = await fetch(`${API_BASE_URL}/get-all-reports`,{method:"POST"});
-        if (!response.ok) throw new Error('Failed to fetch data');
+        const response = await fetch(`${API_BASE_URL}/get-all-reports`, { method: "POST" });
         
+        if (!response.ok) throw new Error('Failed to fetch data');
+
         const result = await response.json();
         const allReports: RiskData[] = result.reports ? result.reports : (Array.isArray(result) ? result : []);
-        
+
         const report = allReports.find(r => r.run_id === id);
+        
         if (report) {
           setData(report);
         } else {
@@ -114,12 +121,13 @@ export const ReportDashboard: React.FC = () => {
              setError('Report not found');
           }
         }
+
       } catch (err) {
         console.error(err);
         if (id === SAMPLE_RISK_DATA.run_id) {
-            setData(SAMPLE_RISK_DATA);
+          setData(SAMPLE_RISK_DATA);
         } else {
-            setError('Failed to load report data. Server might be offline.');
+          setError('Failed to load report data. Server might be offline.');
         }
       } finally {
         setLoading(false);
@@ -129,6 +137,7 @@ export const ReportDashboard: React.FC = () => {
     if (id) {
       fetchReport();
     }
+
   }, [id]);
 
   useEffect(() => {
